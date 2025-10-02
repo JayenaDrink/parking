@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hugging Face Space Status Checker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .status {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-weight: bold;
+        }
+        
+        .loading {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+        }
+        
+        .success {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            color: #155724;
+        }
+        
+        .error {
+            background: #f8d7da;
+            border: 1px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin: 1rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Hugging Face Space Status</h1>
+        <p>Checking your parking detector deployment...</p>
+        
+        <div id="status" class="status loading">
+            <div class="spinner"></div>
+            Checking Space status...
+        </div>
+        
+        <div id="details"></div>
+        
+        <div id="actions" style="display: none;">
+            <a href="ai_demo.html" class="btn">🤖 Try AI Demo</a>
+            <a href="https://huggingface.co/spaces/NickK2025/parking-detector" target="_blank" class="btn">🔗 View Space</a>
+        </div>
+        
+        <div style="margin-top: 2rem; padding: 1rem; background: #e3f2fd; border-radius: 8px;">
+            <h3>⏰ Typical Startup Times:</h3>
+            <p><strong>First deployment:</strong> 10-15 minutes</p>
+            <p><strong>Subsequent starts:</strong> 2-5 minutes</p>
+            <p><strong>With large models:</strong> 5-10 minutes</p>
+        </div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const detailsDiv = document.getElementById('details');
+        const actionsDiv = document.getElementById('actions');
+        
+        const SPACE_URL = 'https://nickk2025-parking-detector.hf.space';
+        
+        let checkCount = 0;
+        let startTime = Date.now();
+        
+        async function checkSpaceStatus() {
+            checkCount++;
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            
+            try {
+                // Try to reach the health endpoint
+                const response = await fetch(SPACE_URL + '/health', {
+                    method: 'GET',
+                    mode: 'cors',
+                    timeout: 10000
+                });
+                
+                if (response.ok) {
+                    // Space is running!
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = '✅ Space is RUNNING!';
+                    
+                    detailsDiv.innerHTML = `
+                        <p>🎉 Your Hugging Face Space is now live!</p>
+                        <p>⏱️ Startup time: ${elapsed} seconds</p>
+                        <p>🔗 URL: <a href="${SPACE_URL}" target="_blank">${SPACE_URL}</a></p>
+                    `;
+                    
+                    actionsDiv.style.display = 'block';
+                    
+                    // Test the detect endpoint
+                    setTimeout(testDetectEndpoint, 2000);
+                    return;
+                }
+            } catch (error) {
+                console.log('Space not ready yet:', error.message);
+            }
+            
+            // Try to reach the main page
+            try {
+                const response = await fetch(SPACE_URL, {
+                    method: 'GET',
+                    mode: 'no-cors',
+                    timeout: 10000
+                });
+                
+                // If we get here, the space is at least responding
+                statusDiv.className = 'status loading';
+                statusDiv.innerHTML = `
+                    <div class="spinner"></div>
+                    🔄 Space responding, loading AI model...
+                `;
+            } catch (error) {
+                statusDiv.className = 'status loading';
+                statusDiv.innerHTML = `
+                    <div class="spinner"></div>
+                    ⏳ Still starting up... (${elapsed}s)
+                `;
+            }
+            
+            detailsDiv.innerHTML = `
+                <p><strong>Check #${checkCount}</strong> - Elapsed: ${elapsed} seconds</p>
+                <p>Status: ${elapsed < 300 ? 'Normal startup time' : elapsed < 600 ? 'Taking longer than usual' : 'Very slow - may need restart'}</p>
+            `;
+            
+            // Continue checking every 15 seconds
+            if (elapsed < 900) { // Stop after 15 minutes
+                setTimeout(checkSpaceStatus, 15000);
+            } else {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '⚠️ Startup taking too long - may need manual restart';
+            }
+        }
+        
+        async function testDetectEndpoint() {
+            try {
+                // Test if the detect endpoint is working
+                const testResponse = await fetch(SPACE_URL + '/detect', {
+                    method: 'POST',
+                    mode: 'cors'
+                });
+                
+                detailsDiv.innerHTML += '<p>🎯 AI Detection endpoint is ready!</p>';
+            } catch (error) {
+                detailsDiv.innerHTML += '<p>⚠️ Space running but AI endpoint may need more time</p>';
+            }
+        }
+        
+        // Start checking immediately
+        checkSpaceStatus();
+    </script>
+</body>
+</html>
