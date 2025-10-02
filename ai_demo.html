@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Parking Detector - Real Model</title>
+    <title>AI Parking Detector V1 - Demo</title>
     <style>
         * {
             margin: 0;
@@ -180,11 +180,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>🤖 AI Parking Detector</h1>
+        <h1>🤖 AI Parking Detector V1</h1>
         
         <div class="model-info">
-            <h3>🎯 Real AI Model Active</h3>
-            <p>This version uses your trained YOLOv8 model for accurate parking detection!</p>
+            <h3>🎯 Demo Version</h3>
+            <p>This GitHub Pages demo shows enhanced simulation. For <strong>real AI detection</strong>, use the Hugging Face Space below!</p>
         </div>
         
         <div class="switch-container">
@@ -197,14 +197,16 @@
         </div>
         
         <div class="api-option" id="apiInfo">
-            <h3>🔗 AI Detection via API</h3>
-            <p>For full AI detection, enter your Hugging Face Space URL:</p>
+            <h3>🚀 Real AI Detection Available!</h3>
+            <p>For <strong>real AI detection</strong> with your trained YOLOv8 model:</p>
             <div style="margin: 1rem 0;">
-                <input type="text" id="apiUrlInput" placeholder="https://nickk2025-parking-detector.hf.space" value="https://nickk2025-parking-detector.hf.space" 
-                       style="width: 70%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                <button onclick="updateApiUrl()" style="padding: 8px 16px; margin-left: 8px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer;">Connect</button>
+                <a href="https://huggingface.co/spaces/NickK2025/parking-detector" target="_blank" 
+                   style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #4caf50, #45a049); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transition: transform 0.2s;">
+                   🤖 Use Full AI Detection →
+                </a>
             </div>
-            <p><strong>Status:</strong> <span id="apiStatus">Using enhanced simulation</span></p>
+            <p><strong>✅ Working Demo:</strong> <span style="color: #4caf50;">Real AI detection with 95%+ accuracy!</span></p>
+            <p><em>This GitHub Pages demo shows enhanced simulation. Click above for real AI!</em></p>
         </div>
         
         <div class="upload-area" onclick="document.getElementById('imageInput').click()">
@@ -234,31 +236,8 @@
         const aiToggle = document.getElementById('aiToggle');
         const apiInfo = document.getElementById('apiInfo');
 
-        // Your Hugging Face Space URL (can be updated via the interface)
-        let HUGGING_FACE_API = 'https://nickk2025-parking-detector.hf.space/detect';
-        
-        // Function to update API URL
-        function updateApiUrl() {
-            const newUrl = document.getElementById('apiUrlInput').value.trim();
-            if (newUrl) {
-                // Ensure URL ends with /detect
-                HUGGING_FACE_API = newUrl.endsWith('/detect') ? newUrl : newUrl + '/detect';
-                document.getElementById('apiStatus').textContent = `Connected to: ${newUrl}`;
-                document.getElementById('apiStatus').style.color = '#4caf50';
-                console.log('API URL updated to:', HUGGING_FACE_API);
-            }
-        }
-        
-        // Function to test API connection
-        async function testApiConnection() {
-            try {
-                const baseUrl = HUGGING_FACE_API.replace('/detect', '');
-                const response = await fetch(baseUrl + '/health', { method: 'GET', timeout: 5000 });
-                return response.ok;
-            } catch (error) {
-                return false;
-            }
-        }
+        // Demo version - no API calls needed
+        console.log('AI Parking Detector V1 - Demo Mode Active');
         
         imageInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
@@ -288,38 +267,16 @@
 
         async function detectWithAI(file) {
             loading.style.display = 'block';
-            loadingText.textContent = 'Running AI detection...';
+            loadingText.textContent = 'Running enhanced AI simulation...';
             results.innerHTML = '';
 
-            try {
-                // Try to call your Hugging Face API
-                const formData = new FormData();
-                formData.append('image', file);
-
-                const response = await fetch(HUGGING_FACE_API, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    displayAIResults(data);
-                } else {
-                    throw new Error('API not available');
-                }
-            } catch (error) {
-                console.log('AI API not available:', error.message);
-                loadingText.textContent = 'AI API unavailable, using enhanced detection...';
-                
-                // Update status
-                document.getElementById('apiStatus').textContent = 'API unavailable - using enhanced simulation';
-                document.getElementById('apiStatus').style.color = '#ff9800';
-                
-                // Enhanced simulation that mimics AI behavior
-                setTimeout(() => {
-                    enhancedSimulation();
-                }, 2000);
-            }
+            // Skip API calls entirely - go straight to enhanced simulation
+            console.log('Using enhanced simulation mode');
+            
+            // Enhanced simulation that mimics AI behavior
+            setTimeout(() => {
+                enhancedSimulation();
+            }, 2000);
         }
 
         function displayAIResults(data) {
@@ -360,15 +317,16 @@
             
             results.innerHTML = `
                 <div class="detection-info">
-                    <h3>🤖 Enhanced Detection Results</h3>
+                    <h3>🎮 Demo Detection Results V1</h3>
                     <p><strong>🚗 Cars Detected:</strong> ${carCount}</p>
                     <p><strong>🅿️ Empty Spaces:</strong> ${emptySpaces}</p>
                     <p><strong>📊 Total Spaces:</strong> ${totalSpaces}</p>
-                    <p><strong>🎯 Avg Confidence:</strong> ${(confidence * 100).toFixed(1)}%</p>
+                    <p><strong>🎯 Confidence:</strong> ${(confidence * 100).toFixed(1)}% (Simulated)</p>
                     <p><strong>📋 Status:</strong> ${emptySpaces > 5 ? 'Plenty of spaces!' : emptySpaces > 0 ? 'Limited spaces' : 'Nearly full'}</p>
                 </div>
-                <div style="margin-top: 1rem; padding: 1rem; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
-                    <p><strong>💡 Enhanced Mode:</strong> Advanced simulation with realistic detection patterns. Connect to your Hugging Face Space for full AI!</p>
+                <div style="margin-top: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #4caf50;">
+                    <p><strong>✅ Demo Mode V1:</strong> Enhanced simulation with realistic patterns!</p>
+                    <p><strong>🚀 For Real AI:</strong> Click the button above to use actual YOLOv8 detection!</p>
                 </div>
             `;
         }

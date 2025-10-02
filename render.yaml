@@ -2,8 +2,8 @@ services:
   - type: web
     name: parking-detector
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT simple_app:app
+    buildCommand: pip install -r requirements_flask.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT app_flask:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.16

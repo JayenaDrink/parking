@@ -25,6 +25,9 @@ def load_model():
             if os.path.exists('models/parking_model.pt'):
                 print("Loading custom parking model...")
                 model = YOLO('models/parking_model.pt')
+            elif os.path.exists('parking_model.pt'):
+                print("Loading parking model from root...")
+                model = YOLO('parking_model.pt')
             else:
                 print("Loading pretrained YOLOv8 model...")
                 model = YOLO('yolov8n.pt')  # This will download automatically
