@@ -198,8 +198,13 @@
         
         <div class="api-option" id="apiInfo">
             <h3>🔗 AI Detection via API</h3>
-            <p>For full AI detection, we'll connect to your Hugging Face Space or deploy a backend API.</p>
-            <p><strong>Current:</strong> Using browser-based detection simulation</p>
+            <p>For full AI detection, enter your Hugging Face Space URL:</p>
+            <div style="margin: 1rem 0;">
+                <input type="text" id="apiUrlInput" placeholder="https://nickk2025-parking-detector.hf.space" value="https://nickk2025-parking-detector.hf.space" 
+                       style="width: 70%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <button onclick="updateApiUrl()" style="padding: 8px 16px; margin-left: 8px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer;">Connect</button>
+            </div>
+            <p><strong>Status:</strong> <span id="apiStatus">Using enhanced simulation</span></p>
         </div>
         
         <div class="upload-area" onclick="document.getElementById('imageInput').click()">
@@ -229,8 +234,31 @@
         const aiToggle = document.getElementById('aiToggle');
         const apiInfo = document.getElementById('apiInfo');
 
-        // Your Hugging Face Space URL (replace with your actual URL)
-        const HUGGING_FACE_API = 'https://your-username-parking-detector.hf.space/detect';
+        // Your Hugging Face Space URL (can be updated via the interface)
+        let HUGGING_FACE_API = 'https://nickk2025-parking-detector.hf.space/detect';
+        
+        // Function to update API URL
+        function updateApiUrl() {
+            const newUrl = document.getElementById('apiUrlInput').value.trim();
+            if (newUrl) {
+                // Ensure URL ends with /detect
+                HUGGING_FACE_API = newUrl.endsWith('/detect') ? newUrl : newUrl + '/detect';
+                document.getElementById('apiStatus').textContent = `Connected to: ${newUrl}`;
+                document.getElementById('apiStatus').style.color = '#4caf50';
+                console.log('API URL updated to:', HUGGING_FACE_API);
+            }
+        }
+        
+        // Function to test API connection
+        async function testApiConnection() {
+            try {
+                const baseUrl = HUGGING_FACE_API.replace('/detect', '');
+                const response = await fetch(baseUrl + '/health', { method: 'GET', timeout: 5000 });
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
         
         imageInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
@@ -280,8 +308,12 @@
                     throw new Error('API not available');
                 }
             } catch (error) {
-                console.log('AI API not available, using enhanced simulation');
+                console.log('AI API not available:', error.message);
                 loadingText.textContent = 'AI API unavailable, using enhanced detection...';
+                
+                // Update status
+                document.getElementById('apiStatus').textContent = 'API unavailable - using enhanced simulation';
+                document.getElementById('apiStatus').style.color = '#ff9800';
                 
                 // Enhanced simulation that mimics AI behavior
                 setTimeout(() => {
