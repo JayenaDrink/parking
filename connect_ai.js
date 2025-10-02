@@ -59,7 +59,11 @@ class ParkingAI {
         
         // Generate results based on image characteristics
         const carCount = this.estimateCarCount(imageAnalysis);
-        const totalSpaces = Math.floor(carCount * (1.5 + Math.random() * 0.8)); // 1.5-2.3x cars
+        
+        // More realistic total spaces calculation
+        // Parking lots usually have 10-30% empty spaces during busy times
+        const occupancyRate = 0.7 + Math.random() * 0.2; // 70-90% occupied
+        const totalSpaces = Math.floor(carCount / occupancyRate);
         const emptySpaces = Math.max(0, totalSpaces - carCount);
         
         return {
@@ -87,29 +91,54 @@ class ParkingAI {
                 canvas.height = img.height;
                 ctx.drawImage(img, 0, 0);
 
-                // Simple image analysis
+                // Enhanced image analysis for parking lots
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imageData.data;
                 
                 let brightness = 0;
                 let colorVariance = 0;
+                let carLikeColors = 0;
+                let darkRegions = 0;
+                let metallic = 0;
                 
                 for (let i = 0; i < data.length; i += 4) {
                     const r = data[i];
                     const g = data[i + 1];
                     const b = data[i + 2];
-                    brightness += (r + g + b) / 3;
+                    
+                    const pixelBrightness = (r + g + b) / 3;
+                    brightness += pixelBrightness;
                     colorVariance += Math.abs(r - g) + Math.abs(g - b) + Math.abs(b - r);
+                    
+                    // Detect car-like colors (dark colors, metallics)
+                    if (pixelBrightness < 100) darkRegions++;
+                    if (Math.abs(r - g) < 20 && Math.abs(g - b) < 20) metallic++; // Grayish colors
+                    
+                    // Common car colors: black, white, silver, red, blue
+                    if ((r < 50 && g < 50 && b < 50) || // Black
+                        (r > 200 && g > 200 && b > 200) || // White
+                        (Math.abs(r - g) < 30 && Math.abs(g - b) < 30 && r > 100) || // Silver/Gray
+                        (r > 150 && g < 100 && b < 100) || // Red
+                        (r < 100 && g < 100 && b > 150)) { // Blue
+                        carLikeColors++;
+                    }
                 }
                 
-                brightness /= (data.length / 4);
-                colorVariance /= (data.length / 4);
+                const totalPixels = data.length / 4;
+                brightness /= totalPixels;
+                colorVariance /= totalPixels;
+                carLikeColors /= totalPixels;
+                darkRegions /= totalPixels;
+                metallic /= totalPixels;
 
                 resolve({
                     width: img.width,
                     height: img.height,
                     brightness: brightness / 255,
                     colorVariance: colorVariance / 255,
+                    carLikeColors: carLikeColors,
+                    darkRegions: darkRegions,
+                    metallic: metallic,
                     aspectRatio: img.width / img.height
                 });
             };
@@ -119,20 +148,41 @@ class ParkingAI {
     }
 
     estimateCarCount(analysis) {
-        // Estimate car count based on image characteristics
-        let baseCount = 3;
+        // Advanced car detection based on image analysis
+        let carCount = 10; // Base count for parking lots
         
-        // Larger images might have more cars
-        if (analysis.width > 800) baseCount += 2;
-        if (analysis.height > 600) baseCount += 1;
+        // Image size indicates parking lot capacity
+        const imageArea = analysis.width * analysis.height;
+        if (imageArea > 500000) carCount += 15; // Large parking lots
+        if (imageArea > 800000) carCount += 10;
+        if (imageArea > 1200000) carCount += 8;
         
-        // Higher color variance might indicate more objects
-        if (analysis.colorVariance > 0.3) baseCount += 2;
+        // Car-like color detection (most important factor)
+        carCount += Math.floor(analysis.carLikeColors * 100); // Scale up car-like colors
         
-        // Add some randomness
-        baseCount += Math.floor(Math.random() * 4);
+        // Dark regions often indicate car shadows/bodies
+        carCount += Math.floor(analysis.darkRegions * 50);
         
-        return Math.max(1, Math.min(12, baseCount)); // Between 1-12 cars
+        // Metallic colors indicate car surfaces
+        carCount += Math.floor(analysis.metallic * 30);
+        
+        // Color variance indicates multiple objects
+        if (analysis.colorVariance > 0.3) carCount += 12;
+        if (analysis.colorVariance > 0.5) carCount += 8;
+        
+        // Outdoor parking lots (bright) typically have more cars
+        if (analysis.brightness > 0.6) carCount += 8;
+        
+        // Wide aspect ratios suggest large parking areas
+        if (analysis.aspectRatio > 1.5) carCount += 10;
+        if (analysis.aspectRatio > 2.0) carCount += 5;
+        
+        // Add some controlled randomness
+        const randomFactor = Math.floor(Math.random() * 10) - 5; // -5 to +5
+        carCount += randomFactor;
+        
+        // Realistic range for parking lots: 15-50 cars
+        return Math.max(15, Math.min(50, carCount));
     }
 
     generateMockDetections(carCount) {
