@@ -222,10 +222,11 @@
                     
                     results.innerHTML = `
                         <div class="detection-info">
-                            <h3>🎯 Detection Results</h3>
-                            <p><strong>Cars Detected:</strong> ${data.car_count}</p>
-                            <p><strong>Total Detections:</strong> ${data.detections.length}</p>
-                            <p><strong>Status:</strong> ${data.message}</p>
+                            <h3>🎯 Parking Analysis Results</h3>
+                            <p><strong>🚗 Cars Detected:</strong> ${data.car_count}</p>
+                            <p><strong>🅿️ Empty Spaces:</strong> ${data.empty_spaces || 'Calculating...'}</p>
+                            <p><strong>📊 Total Spaces:</strong> ${data.total_spaces || 'Analyzing...'}</p>
+                            <p><strong>📋 Status:</strong> ${data.message}</p>
                         </div>
                     `;
                 } else {
