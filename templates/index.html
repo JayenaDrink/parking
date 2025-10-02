@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Slot Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 90%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background-color: #f8f9ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background-color: #f0f2ff;
+        }
+        
+        #imageInput {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin: 1rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .preview-container {
+            display: none;
+            margin: 2rem 0;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+        
+        .results {
+            background: #f8f9ff;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .detection-info {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .error {
+            background: #ffe6e6;
+            color: #d63031;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #d63031;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Parking Slot Detector</h1>
+        
+        <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+            <p>📸 Click here or drag & drop an image of a parking lot</p>
+            <button class="upload-btn">Choose Image</button>
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing parking spaces...</p>
+        </div>
+        
+        <div class="preview-container" id="previewContainer">
+            <img id="imagePreview" class="image-preview" alt="Preview">
+            <div id="results" class="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.querySelector('.upload-area');
+        const imageInput = document.getElementById('imageInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const results = document.getElementById('results');
+        const loading = document.getElementById('loading');
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                previewContainer.style.display = 'block';
+                detectParking(file);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function detectParking(file) {
+            loading.style.display = 'block';
+            results.innerHTML = '';
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update preview with annotated image
+                    imagePreview.src = `data:image/jpeg;base64,${data.annotated_image}`;
+                    
+                    results.innerHTML = `
+                        <div class="detection-info">
+                            <h3>🎯 Detection Results</h3>
+                            <p><strong>Cars Detected:</strong> ${data.car_count}</p>
+                            <p><strong>Total Detections:</strong> ${data.detections.length}</p>
+                            <p><strong>Status:</strong> ${data.message}</p>
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `<div class="error">❌ ${data.error}</div>`;
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
