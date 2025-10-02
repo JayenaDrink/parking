@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 import base64
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import io
 import os
 import random
